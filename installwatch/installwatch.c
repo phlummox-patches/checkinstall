@@ -64,6 +64,7 @@
 
 #define error(X) (X < 0 ? strerror(errno) : "success")
 
+int __installwatch_init = 0;
 int __installwatch_refcount = 0;
 int __installwatch_timecount = 0;
 
@@ -423,6 +424,8 @@ static void initialize(void) {
 #endif
 
 	if(instw_init()) exit(-1);
+
+	__installwatch_init = 1;
 }
 
 void _init(void) {
@@ -2967,6 +2970,14 @@ ssize_t readlink(const char *path,char *buf,size_t bufsiz) {
 #endif
 	instw_t instw;
 	int status;
+
+	if ( __installwatch_init == 0 &&
+		 libc_handle == RTLD_NEXT &&
+		 strcmp(path, "/etc/malloc.conf") == 0 ) {
+
+		errno = ENOENT;
+		return -1;
+	}
 
 	if (!libc_handle)
 		initialize();
